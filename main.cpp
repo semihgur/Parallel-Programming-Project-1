@@ -87,4 +87,3 @@ int downsampled_width = width / 2;
         }
     }
 }
-
