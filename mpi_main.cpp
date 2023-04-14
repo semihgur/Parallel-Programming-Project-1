@@ -109,3 +109,20 @@ void paralel_downscaling(uint8_t* rgb_image, int width, int height, uint8_t* dow
                   downsampled_image, pixels_per_process * CHANNEL_NUM, MPI_UNSIGNED_CHAR,
                   MPI_COMM_WORLD);
 }
+
+/*
+Resmi eþit parçalara bölüyor process sayýsýna göre
+int piece_size = (width * height) / size;
+
+int start_index = rank * piece_size;
+int end_index = start_index + piece_size;
+
+uint8_t* my_image_piece = (uint8_t*)malloc(piece_size * CHANNEL_NUM * sizeof(uint8_t));
+
+for (int i = start_index; i < end_index; i++) {
+    my_image_piece[i - start_index] = input_image[i];
+}
+*/
+
+
+
