@@ -1,16 +1,35 @@
 # Parallel Programming Project 1
- Multi-Proccess Foto Scaling
- MAKE COMMANDS
 
-make
 
-compiles code
+For compile all code:
 
-make run
+```bash
 
-runs the code with parameters papgan.jpg for now
- you can always change this by edititng makefile RARGS variable
+    make all
 
-make clean
+```
 
- deletes bin file and out photo.
+This will compile all .c file to ./bin folder.
+
+You can run seq_main or mpi_main that is paralel of seq_main with :
+```bash
+
+    make runSequential1
+    make runParallel2
+
+
+```
+
+You can change process count when calling definition of function.
+
+For example:
+
+This will run mpi_man with 4 process.
+
+```bash
+
+
+    make runParallel4
+
+
+```

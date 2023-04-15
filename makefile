@@ -7,39 +7,34 @@ INCLUDEDIR=./include
 HEADERS=$(patsubst %,$(INCLUDEDIR)/%,$(_HEADERS))
 INCLUDE=-I./include
 ODIR=./bin
+SRC=./src
 
-program: main.cpp $(HEADERS)
-	mpicc $< -o $(ODIR)/$@ $(INCLUDE) $(ARGS)
 
-programPar: mpi_main.cpp $(HEADERS)
-	mpicc $< -o $(ODIR)/$@ $(INCLUDE) $(ARGS)
+.PHONY: all
+all: $(patsubst $(SRC)/%.c, $(ODIR)/%, $(wildcard $(SRC)/*.c))
+
+$(ODIR)/%: $(SRC)/%.c $(HEADERS)
+	mpicc $< -o $@ $(INCLUDE) $(ARGS)
+
+
 .PHONY: run
 
-runParallel:
-	mpirun -np 1 $(ODIR)/programPar $(RARGS)
-.PHONY: clean
+define run_target
+runSequential$(1): all
+	mpirun -np $(1) $(ODIR)/seq_main $(RARGS)
 
-runParallel2:
-	mpirun -np 2 $(ODIR)/programPar $(RARGS)
-.PHONY: clean
+.PHONY: runSequential$(1)
 
-runParallel4:
-	mpirun -np 4 $(ODIR)/programPar $(RARGS)
-.PHONY: clean
+runParallel$(1): all
+	mpirun -np $(1) $(ODIR)/mpi_main $(RARGS)
 
-runSequential:
-	mpirun -np 1 $(ODIR)/program $(RARGS)
+.PHONY: runParallel$(1)
+endef
 
-.PHONY: clean
+$(foreach proc,1 2 4,$(eval $(call run_target,$(proc))))
 
-runSequential2:
-	mpirun -np 2 $(ODIR)/program $(RARGS)
+
 
 .PHONY: clean
-
-runSequential4:
-	mpirun -np 4 $(ODIR)/program $(RARGS)
-.PHONY: clean
-
 clean:
 	rm -f bin/* photos/out.jpg
