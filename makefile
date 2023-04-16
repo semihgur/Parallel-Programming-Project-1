@@ -1,4 +1,4 @@
-ARGS=-lmpi_cxx -lm -lstdc++
+ARGS=-lmpi_cxx -lm -lstdc++ -lhwloc
 _RARGS=papagan.JPG out.jpg
 PHOTODIR=./photos
 RARGS=$(patsubst %,$(PHOTODIR)/%,$(_RARGS))

@@ -2,9 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
-#include <hwloc.h>          // delete
 #include <sched.h>
-
+#include <hwloc.h>
 
 
 
@@ -43,6 +42,8 @@ int main(int argc, char* argv[]){
     unsigned char *input_image = NULL;
     int output_width = width / 2;
     int output_height = height / 2;
+
+    unsigned char *input_chunk;
 
 
     if(rank == 0){  // Master process
@@ -166,10 +167,6 @@ int main(int argc, char* argv[]){
     return 0;
 
 }
-
-
-
-
 
 
 /*
