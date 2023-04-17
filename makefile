@@ -11,9 +11,9 @@ SRC=./src
 
 
 .PHONY: all
-all: $(patsubst $(SRC)/%.c, $(ODIR)/%, $(wildcard $(SRC)/*.c))
+all: $(patsubst $(SRC)/%.cpp, $(ODIR)/%, $(wildcard $(SRC)/*.cpp))
 
-$(ODIR)/%: $(SRC)/%.c $(HEADERS)
+$(ODIR)/%: $(SRC)/%.cpp $(HEADERS)
 	mpicc $< -o $@ $(INCLUDE) $(ARGS)
 
 

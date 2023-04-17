@@ -56,6 +56,7 @@ int main(int argc,char* argv[])
 }
 
 
+
 void seq_downscaling(uint8_t* rgb_image,int width, int height,uint8_t* downsampled_image)
 {	
 int downsampled_width = width / 2;
