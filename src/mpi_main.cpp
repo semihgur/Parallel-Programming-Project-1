@@ -143,7 +143,7 @@ int main(int argc, char* argv[]){
         downscaling(input_chunk, width ,assigned_chunk_size,output_chunk);
         
         // Send the downscaled image portion back to the master process
-        MPI_Send(output_chunk, output_chunk_size, MPI_UNSIGNED_CHAR, 0, 0, MPI_COMM_WORLD);
+        //MPI_Send(output_chunk, output_chunk_size, MPI_UNSIGNED_CHAR, 0, 0, MPI_COMM_WORLD);
 
         // Clean up
         free(input_chunk);
@@ -213,20 +213,23 @@ void downscaling(uint8_t* rgb_image,int width, int chunkSize,uint8_t* downsample
             for (int dy = 0; dy < 2; dy++) {
                 for (int dx = 0; dx < 2; dx++) {
                     int pixel_index = ((y * 2 + dy) * width + (x * 2 + dx)) * 4;
-
-                    r += rgb_image[pixel_index];
-                    g += rgb_image[pixel_index + 1];
-                    b += rgb_image[pixel_index + 2];
-                    a += rgb_image[pixel_index + 3];
+                    /* SEGFAULT HERE
+                    // r += rgb_image[pixel_index];
+                    // g += rgb_image[pixel_index + 1];
+                    // b += rgb_image[pixel_index + 2];
+                    // a += rgb_image[pixel_index + 3];
+                    */
                 }
             }
 
             // calculate the average value for each channel and store it in the downsampled image
             int downsampled_pixel_index = (y * downsampled_width + x) * 4;
-            downsampled_image[downsampled_pixel_index] = r / 4;
-            downsampled_image[downsampled_pixel_index + 1] = g / 4;
-            downsampled_image[downsampled_pixel_index + 2] = b / 4;
-            downsampled_image[downsampled_pixel_index + 3] = a / 4;
+            /* SEGFAULT HERE
+            // downsampled_image[downsampled_pixel_index] = r / 4;
+            // downsampled_image[downsampled_pixel_index + 1] = g / 4;
+            // downsampled_image[downsampled_pixel_index + 2] = b / 4;
+            // downsampled_image[downsampled_pixel_index + 3] = a / 4;
+            */
         }
     }
 }
