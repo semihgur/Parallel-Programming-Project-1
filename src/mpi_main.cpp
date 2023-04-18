@@ -11,7 +11,7 @@
 #include "stb_image.h"
 #include "stb_image_write.h"
 
-void downscaling(uint8_t *rgb_image, int width, u_int64_t height, uint8_t *downsampled_image);
+void downscaling(uint8_t *rgb_image, int width, int chunkize, uint8_t *downsampled_image);
 
 int main(int argc, char *argv[])
 {
@@ -28,14 +28,14 @@ int main(int argc, char *argv[])
     if (rank == 0)
     { // Master process
         // Image Informations
-        int width, height, channels;
+        int width, height, channels=4;
         unsigned char *input_image;
         int output_width;
         int output_height;
 
         // Read input image
         
-        input_image = stbi_load(argv[1], &width, &height, &channels, 0);    
+        input_image = stbi_load(argv[1], &width, &height, &channels, 4);    
         channels=4;
         output_width = width / 2;
         output_height = height / 2;
@@ -61,16 +61,13 @@ int main(int argc, char *argv[])
         {
             int eight_bit_int_count = divided_line_count[i] * width * channels;
             MPI_Send(&eight_bit_int_count, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
-            printf("input_image[offset]: %d \n", offset);
             MPI_Send(&input_image[offset], eight_bit_int_count, MPI_UINT8_T, i, 0, MPI_COMM_WORLD);
             MPI_Send(&width, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
             offset += eight_bit_int_count;
         }
         u_int8_t *output_image = (u_int8_t *)malloc(output_width * output_height * channels * sizeof(u_int8_t));
-        printf("Chunk sizaaaaaaaaaaaaaaaaaaaaaaaaaaaaae: %d \n", divided_line_count[0] * width * channels);
-
-        downscaling(input_image, width,(u_int64_t) divided_line_count[0] * width * channels, output_image);
-
+        downscaling(input_image, width,divided_line_count[0] * width * channels, output_image);
+        printf("denememejeeek");
 
 
         
@@ -99,24 +96,23 @@ int main(int argc, char *argv[])
         // Receive the assigned image portion and its size
         int assigned_eight_bit_int_count;
         MPI_Recv(&assigned_eight_bit_int_count, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("Assigned eight bit int count: %d \n", assigned_eight_bit_int_count);
         uint8_t*input_chunk = (uint8_t*)malloc(assigned_eight_bit_int_count*sizeof(uint8_t));
-        printf("Input ch11111111111111k: %d \n", input_chunk[0]);
+
         MPI_Recv(input_chunk, assigned_eight_bit_int_count, MPI_UINT8_T, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("Input chu22222222222nk: %d \n", input_chunk[0]);
+
         // recieve width from master proccess
         int width;
         MPI_Recv(&width, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("Width:aaaaaaaaaaaa %d \n", width);  
+  
 
         // Donwscale image partition
         // Downscale the assigned image portion
-        unsigned char *output_chunk = (unsigned char *)malloc(assigned_eight_bit_int_count / 4);
+        uint8_t *output_chunk = (uint8_t *)malloc(assigned_eight_bit_int_count * sizeof(uint8_t));
 
         /* Segment foult here */
-        printf("Chunk size: %d \n", assigned_eight_bit_int_count);
+        printf("Rank: %d width: %d assigned_eight_bit_int_count: %d\n",rank,width,assigned_eight_bit_int_count);
         downscaling(input_chunk, width, assigned_eight_bit_int_count, output_chunk);
-
+        printf("Chunk siasdasdasdasdşlkashjdlkjhasgbdlkjhasgdkjlaze: %d \n", assigned_eight_bit_int_count);
         // Send the downscaled image portion back to the master process
         MPI_Send(output_chunk, assigned_eight_bit_int_count, MPI_UINT8_T, 0, 0, MPI_COMM_WORLD);
 
@@ -125,15 +121,6 @@ int main(int argc, char *argv[])
         free(output_chunk);
     }
 
-    /*
-    // Save and Clean up for the master process
-    if (rank == 0) {
-        stbi_write_jpg(argv[2], width/2, height/2, channels, input_image, 100);
-        stbi_image_free(input_image);
-
-        free(input_image);
-    }*/
-
     // Finalize MPI
     MPI_Finalize();
 
@@ -141,15 +128,14 @@ int main(int argc, char *argv[])
 }
 
 // Got segmentation fould should be fix
-void downscaling(uint8_t *rgb_image, int width, u_int64_t chunkSize, uint8_t *downsampled_image)
+void downscaling(uint8_t *rgb_image, int width,int chunkSize, uint8_t *downsampled_image)
 {
     int downsampled_width = width / 2;
-    printf("witdth: %d\nChunksize: %ld\n", width, chunkSize);
+    printf("witdth: %d\nChunksize: %d\n", width, chunkSize);
     //divided_line_count[0] * width * channels
     int downsampled_height = (chunkSize / width)/8;
     printf("downsampled_width: %d\n", downsampled_width);
     printf("downsampled_height: %d\n", downsampled_height);
-    int a=0;
 
     // iterate through the image pixels in blocks of size 2x2 and calculate the average
     for (int y = 0; y < downsampled_height; y++)
@@ -171,7 +157,6 @@ void downscaling(uint8_t *rgb_image, int width, u_int64_t chunkSize, uint8_t *do
                     
                 }
             }
-
             // calculate the average value for each channel and store it in the downsampled image
             int downsampled_pixel_index = (y * downsampled_width + x) * 4;
 
@@ -180,9 +165,5 @@ void downscaling(uint8_t *rgb_image, int width, u_int64_t chunkSize, uint8_t *do
             downsampled_image[downsampled_pixel_index + 2] = b / 4;
             downsampled_image[downsampled_pixel_index + 3] = a / 4;
         }
-        a++;
-        printf("Downscaling done%d\n",a);
-
     }
-    printf("Downscaling done\n");
 }
