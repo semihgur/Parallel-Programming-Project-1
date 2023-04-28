@@ -31,7 +31,7 @@ runParallel$(1): all
 .PHONY: runParallel$(1)
 endef
 
-$(foreach proc,1 2 4,$(eval $(call run_target,$(proc))))
+$(foreach proc,1 2 3 4 6 8 10 12 14 16,$(eval $(call run_target,$(proc))))
 
 
 
