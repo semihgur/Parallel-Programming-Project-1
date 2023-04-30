@@ -1,15 +1,16 @@
+
 /**
  *
  * CENG342 Project-1
  *
- * Downscaling 
+ * Downscaling SEQUENTIAL
  *
  * Usage:  main <input.jpg> <output.jpg> 
  *
- * @group_id 00
- * @author  your names
+ * @group_id 8
+ * @author Emre Özçatal, Semih Gür, Emirhan Akıtürk, Abdülsamet Haymana
  *
- * @version 1.0, 02 April 2022
+ * @version 2.17, 30 April 2023
  */
 
 #include <math.h>

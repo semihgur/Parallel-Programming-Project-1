@@ -38,3 +38,5 @@ $(foreach proc,1 2 3 4 6 8 10 12 14 16,$(eval $(call run_target,$(proc))))
 .PHONY: clean
 clean:
 	rm -f bin/* photos/out.jpg
+
+
