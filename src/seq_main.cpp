@@ -8,7 +8,7 @@
  * Usage:  main <input.jpg> <output.jpg> 
  *
  * @group_id 8
- * @author Emre Özçatal, Semih Gür, Emirhan Akıtürk, Abdülsamet Haymana
+ * @author Emre Özçatal 20050111074, Semih Gür 19050111017, Emirhan Akıtürk 19050111065, Abdülsamet Haymana 19050111068
  *
  * @version 2.17, 30 April 2023
  */
