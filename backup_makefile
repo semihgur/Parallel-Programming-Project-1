@@ -1,4 +1,4 @@
-ARGS=-lmpi_cxx -lm -lstdc++ -lhwloc -fopenmp
+ARGS=-lmpi_cxx -lm -lstdc++ -lhwloc
 _RARGS=papagan.JPG out.jpg
 PHOTODIR=./photos
 RARGS=$(patsubst %,$(PHOTODIR)/%,$(_RARGS))
@@ -17,21 +17,18 @@ $(ODIR)/%: $(SRC)/%.cpp $(HEADERS)
 	mpicc $< -o $@ $(INCLUDE) $(ARGS)
 
 
-
 .PHONY: run
 
 define run_target
+runSequential$(1): all
+	mpirun -np $(1) $(ODIR)/seq_main $(RARGS)
 
-runParallelOpenMPCompile$(1): all
-	gcc $(1) $(ODIR)/openmp_main $(RARGS)
+.PHONY: runSequential$(1)
+
+runParallel$(1): all
+	mpirun -np $(1) $(ODIR)/mpi_main $(RARGS)
 
 .PHONY: runParallel$(1)
-
-runParallelHybrid$(1): all
-	mpirun -np $(1) $(ODIR)/hybrid_main $(RARGS)
-
-.PHONY: runParallel$(1)
-
 endef
 
 $(foreach proc,1 2 3 4 6 8 10 12 14 16,$(eval $(call run_target,$(proc))))
@@ -42,5 +39,4 @@ $(foreach proc,1 2 3 4 6 8 10 12 14 16,$(eval $(call run_target,$(proc))))
 clean:
 	rm -f bin/* photos/out.jpg
 
-make emre:
-	./bin/openmp_main photos/papagan.JPG photos/out.jpg 2
+
