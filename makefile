@@ -16,31 +16,36 @@ all: $(patsubst $(SRC)/%.cpp, $(ODIR)/%, $(wildcard $(SRC)/*.cpp))
 $(ODIR)/%: $(SRC)/%.cpp $(HEADERS)
 	mpicc $< -o $@ $(INCLUDE) $(ARGS)
 
-
-
 .PHONY: run
 
 define run_target
 
-runParallelOpenMPCompile$(1): all
-	gcc $(1) $(ODIR)/openmp_main $(RARGS)
+runSequential$(1): all
+	mpirun -np $(1) $(ODIR)/seq_main $(RARGS)
+
+.PHONY: runSequential$(1)
+
+runParallel$(1): all
+	mpirun -np $(1) $(ODIR)/mpi_main $(RARGS)
 
 .PHONY: runParallel$(1)
+endef
+
+compileOpenmp$(1): all
+	gcc $(1) $(ODIR)/openmp_main $(RARGS)
 
 runParallelHybrid$(1): all
 	mpirun -np $(1) $(ODIR)/hybrid_main $(RARGS)
 
 .PHONY: runParallel$(1)
-
 endef
+
+runOpenmp$(1):
+	$(ODIR)/openmp_main $(RARGS) $(1)
 
 $(foreach proc,1 2 3 4 6 8 10 12 14 16,$(eval $(call run_target,$(proc))))
 
-
-
 .PHONY: clean
+
 clean:
 	rm -f bin/* photos/out.jpg
-
-make emre:
-	./bin/openmp_main photos/papagan.JPG photos/out.jpg 2
