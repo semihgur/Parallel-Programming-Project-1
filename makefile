@@ -20,28 +20,21 @@ $(ODIR)/%: $(SRC)/%.cpp $(HEADERS)
 
 define run_target
 
-runSequential$(1): all
+runSequential$(1):
 	mpirun -np $(1) $(ODIR)/seq_main $(RARGS)
 
 .PHONY: runSequential$(1)
 
-runParallel$(1): all
-	mpirun -np $(1) $(ODIR)/mpi_main $(RARGS)
-
-.PHONY: runParallel$(1)
-endef
-
-compileOpenmp$(1): all
-	gcc $(1) $(ODIR)/openmp_main $(RARGS)
-
-runParallelHybrid$(1): all
-	mpirun -np $(1) $(ODIR)/hybrid_main $(RARGS)
-
-.PHONY: runParallel$(1)
-endef
-
-runOpenmp$(1):
+runOpenmp$(1): 
+	gcc $(SRC)/openmp_main.cpp -o $(ODIR)/openmp_main $(INCLUDE) $(ARGS)
 	$(ODIR)/openmp_main $(RARGS) $(1)
+.PHONY: runOpenmp$(1)
+
+runHybrid$(1):
+	mpirun -np $(1) $(ODIR)/hybrid_main $(RARGS)
+.PHONY: runHybrid$(1)
+
+endef
 
 $(foreach proc,1 2 3 4 6 8 10 12 14 16,$(eval $(call run_target,$(proc))))
 
@@ -49,3 +42,4 @@ $(foreach proc,1 2 3 4 6 8 10 12 14 16,$(eval $(call run_target,$(proc))))
 
 clean:
 	rm -f bin/* photos/out.jpg
+	clear
