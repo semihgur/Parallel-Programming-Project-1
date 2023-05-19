@@ -20,6 +20,7 @@ $(ODIR)/%: $(SRC)/%.cpp $(HEADERS)
 .PHONY: run
 
 define run_target
+
 runSequential$(1): all
 	mpirun -np $(1) $(ODIR)/seq_main $(RARGS)
 
@@ -34,9 +35,11 @@ endef
 $(foreach proc,1 2 3 4 6 8 10 12 14 16,$(eval $(call run_target,$(proc))))
 
 
-
 .PHONY: clean
 clean:
 	rm -f bin/* photos/out.jpg
 
 
+# make emre$(1):
+# 	mpicc src/openmp_main.cpp -o bin/openmp_main -I./include -lmpi_cxx -lm -lstdc++ -lhwloc -fopenmp
+# 	./bin/openmp_main photos/papagan.JPG photos/out.jpg $(1)
