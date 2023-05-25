@@ -26,7 +26,7 @@
 
 #define CHANNEL_NUM 4
 
-void performParallelDownscaling(uint8_t* inputRGBImage, int originalWidth, int originalHeight, uint8_t* downsampledImage, int rank, int size);
+void performParallelDownscaling(uint8_t* inputRGBImage, int originalWidth, int originalHeight, uint8_t* downsampledImage, int rank, int size, int thread_count);
 long getCurrentCoreFrequency();
 
 int main(int argc, char* argv[])
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-
+    int thread_count = atoi(argv[3]);
     int originalWidth, originalHeight, bpp;
 
     uint8_t* inputImage = stbi_load(argv[1], &originalWidth, &originalHeight, &bpp, CHANNEL_NUM);
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     int downsampledHeight = originalHeight / 2;
 
     uint8_t* downsampledImage = (uint8_t*)malloc(downsampledWidth * downsampledHeight * CHANNEL_NUM * sizeof(uint8_t));
-    performParallelDownscaling(inputImage, originalWidth, originalHeight, downsampledImage, rank, size);
+    performParallelDownscaling(inputImage, originalWidth, originalHeight, downsampledImage, rank, size, thread_count);
 
     double endTime = MPI_Wtime();
 
@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-void performParallelDownscaling(uint8_t* rgbImage, int width, int height, uint8_t* downsampledImage, int rank, int size)
+void performParallelDownscaling(uint8_t* rgbImage, int width, int height, uint8_t* downsampledImage, int rank, int size, int thread_count)
 {
     int downsampledWidth = width / 2;
     int downsampledHeight = height / 2;
@@ -89,7 +89,7 @@ void performParallelDownscaling(uint8_t* rgbImage, int width, int height, uint8_
         endIndex = downsampledWidth * downsampledHeight;
     }
 
-    #pragma omp parallel for collapse(2) schedule(dynamic) num_threads(4)
+    #pragma omp parallel for collapse(2) schedule(dynamic) num_threads(thread_count)
     for (int y = startIndex / downsampledWidth; y < endIndex / downsampledWidth; y++) {
         for (int x = 0; x < downsampledWidth; x++) {
             int redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0;

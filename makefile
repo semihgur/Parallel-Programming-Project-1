@@ -25,17 +25,28 @@ runSequential$(1): $(ODIR)/seq_main
 	mpirun -np $(1) $(ODIR)/seq_main $(RARGS)
 .PHONY: runSequential$(1)
 
+ifeq ($(1),0)
+    ANOTHER_VALUE = 16
+else ifeq ($(1),1)
+    ANOTHER_VALUE = 8
+else ifeq ($(1),3)
+    ANOTHER_VALUE = 4
+else ifeq ($(1),7)
+    ANOTHER_VALUE = 2
+else ifeq ($(1),15)
+    ANOTHER_VALUE = 1
+endif
+
 runOpenmp$(1): $(ODIR)/openmp_main
-	$(ODIR)/openmp_main $(RARGS) $(1)
+	$(ODIR)/openmp_main $(RARGS) $(1) 
 .PHONY: runOpenmp$(1)
 
 runHybrid$(1): $(ODIR)/hybrid_main
-	mpirun -np $(1) $(ODIR)/hybrid_main $(RARGS)
+	mpirun -np $(1) $(ODIR)/hybrid_main $(RARGS) $(ANOTHER_VALUE)
 .PHONY: runHybrid$(1)
-
 endef
 
-$(foreach proc,1 2 3 4 6 8 10 12 14 16,$(eval $(call run_target,$(proc))))
+$(foreach proc,0 1 2 3 4 6 8 10 12 14 16,$(eval $(call run_target,$(proc))))
 
 .PHONY: clean
 

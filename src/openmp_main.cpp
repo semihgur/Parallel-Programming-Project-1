@@ -7,7 +7,7 @@
  * Usage:  main <input.jpg> <output.jpg> 
  *
  * @group_id 8
- * @author Emre Özçatal 20050111074, Semih Gür 19050111017, Emirhan Akıtürk 19050111065, Abdülsamet Haymana 19050111068
+ * @author Emirhan Akıtürk 19050111065, Emre Özçatal 20050111074, Semih Gür 19050111017, Abdülsamet Haymana 19050111068
  *
  * @version 2.17, 30 April 2023
  */
@@ -38,7 +38,6 @@ int main(int argc, char* argv[])
     printf("Input: %s , Output: %s  \n", argv[1], argv[2]);
 
     int num_threads = atoi(argv[3]);
-
     // start the timer
     double time1 = omp_get_wtime();	
     uint8_t* downsampled_image = (uint8_t*) malloc(width/2 * height/2 * CHANNEL_NUM * sizeof(uint8_t));
@@ -55,13 +54,13 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-void parallel_downscaling(uint8_t* rgb_image, int width, int height, uint8_t* downsampled_image, int a)
+void parallel_downscaling(uint8_t* rgb_image, int width, int height, uint8_t* downsampled_image, int thread_count)
 {	
     int downsampled_width = width / 2;
     int downsampled_height = height / 2;
 
     // iterate through the image pixels in blocks of size 2x2 and calculate the average
-    #pragma omp parallel for collapse(2) schedule(dynamic) num_threads(a)
+    #pragma omp parallel for collapse(2) schedule(dynamic) num_threads(thread_count)
     for (int y = 0; y < downsampled_height; y++) {
         for (int x = 0; x < downsampled_width; x++) {
             int r = 0, g = 0, b = 0, a = 0;
