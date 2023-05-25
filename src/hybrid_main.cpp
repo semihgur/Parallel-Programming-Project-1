@@ -2,12 +2,12 @@
  *
  * CENG342 Project-1
  *
- * Downscaling SEQUENTIAL
+ * Downscaling PARALLEL
  *
  * Usage:  main <input.jpg> <output.jpg> 
  *
  * @group_id 8
- * @author Emre Özçatal 20050111074, Semih Gür 19050111017, Emirhan Akıtürk 19050111065, Abdülsamet Haymana 19050111068
+ * @author Emirhan Akıtürk 19050111065, Semih Gür 19050111017,  Emre Özçatal 20050111074, Abdülsamet Haymana 19050111068
  *
  * @version 2.17, 30 April 2023
  */
@@ -15,8 +15,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
-#include <sched.h>
-#include <hwloc.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -26,130 +24,103 @@
 
 #define CHANNEL_NUM 4
 
-void performParallelDownscaling(uint8_t* inputRGBImage, int originalWidth, int originalHeight, uint8_t* downsampledImage, int rank, int size);
-long getCurrentCoreFrequency();
+void parallel_downscaling(uint8_t* rgb_image, int width, int height, uint8_t* downsampled_image, int rank, int size);
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) 
+{   
     int rank, size;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    int originalWidth, originalHeight, bpp;
+    int width, height, bpp;
 
-    uint8_t* inputImage = stbi_load(argv[1], &originalWidth, &originalHeight, &bpp, CHANNEL_NUM);
+    uint8_t* input_image = stbi_load(argv[1], &width, &height, &bpp, CHANNEL_NUM);
 
     if (rank == 0) {
-        printf("Original Width: %d  Height: %d \n", originalWidth, originalHeight);
+        printf("Width: %d  Height: %d \n", width, height);
         printf("Input: %s , Output: %s  \n", argv[1], argv[2]);
     }
 
-    double startTime = MPI_Wtime();
+    double time1 = MPI_Wtime();   
 
-    int downsampledWidth = originalWidth / 2;
-    int downsampledHeight = originalHeight / 2;
+    uint8_t* downsampled_image = (uint8_t*)malloc(width/2 * height/2 * CHANNEL_NUM * sizeof(uint8_t));
+    parallel_downscaling(input_image, width, height, downsampled_image, rank, size);
 
-    uint8_t* downsampledImage = (uint8_t*)malloc(downsampledWidth * downsampledHeight * CHANNEL_NUM * sizeof(uint8_t));
-    performParallelDownscaling(inputImage, originalWidth, originalHeight, downsampledImage, rank, size);
-
-    double endTime = MPI_Wtime();
-
+    double time2 = MPI_Wtime();
     if (rank == 0) {
-        printf("Elapsed time: %lf \n", endTime - startTime);
+        printf("Elapsed time: %lf \n", time2 - time1);    
 
-        stbi_write_jpg(argv[2], downsampledWidth, downsampledHeight, CHANNEL_NUM, downsampledImage, 100);
+        stbi_write_jpg(argv[2], width/2, height/2, CHANNEL_NUM, downsampled_image, 100);
     }
 
-    stbi_image_free(inputImage);
-    stbi_image_free(downsampledImage);
+    stbi_image_free(input_image);
+    stbi_image_free(downsampled_image);
 
     MPI_Finalize();
     return 0;
 }
 
-void performParallelDownscaling(uint8_t* rgbImage, int width, int height, uint8_t* downsampledImage, int rank, int size)
-{
-    int downsampledWidth = width / 2;
-    int downsampledHeight = height / 2;
-
-    long* cpuFrequencies = (long*)malloc(size * sizeof(long));
-    long myFrequency = getCurrentCoreFrequency();
-    MPI_Allgather(&myFrequency, 1, MPI_LONG, cpuFrequencies, 1, MPI_LONG, MPI_COMM_WORLD);
-
-    long totalFrequency = 0;
-    for (int i = 0; i < size; i++) {
-        totalFrequency += cpuFrequencies[i];
+void parallel_downscaling(uint8_t* rgb_image, int width, int height, uint8_t* downsampled_image, int rank, int size) {
+    //Calculating downsampled image size
+    int downsampled_width = width / 2;
+    int downsampled_height = height / 2;
+    //Calculating the number of pixels per process
+    int pixels_per_process = (downsampled_width * downsampled_height + size - 1) / size;
+    int start_index = rank * pixels_per_process;
+    int end_index = start_index + pixels_per_process;
+    if (end_index > downsampled_width * downsampled_height) {
+        end_index = downsampled_width * downsampled_height;
     }
 
-    int pixelsPerProcess = (downsampledWidth * downsampledHeight * cpuFrequencies[rank]) / totalFrequency;
-    int startIndex = rank * pixelsPerProcess;
-    int endIndex = startIndex + pixelsPerProcess;
-    if (endIndex > downsampledWidth * downsampledHeight) {
-        endIndex = downsampledWidth * downsampledHeight;
-    }
+    //Downsampling the image
+    #pragma omp parallel for collapse(2) schedule(dynamic) num_threads(2)
+    for (int y = start_index / downsampled_width; y < end_index / downsampled_width; y++) {
+        for (int x = 0; x < downsampled_width; x++) {
+            int r = 0, g = 0, b = 0, a = 0;
 
-    #pragma omp parallel for collapse(2) schedule(dynamic) num_threads(4)
-    for (int y = startIndex / downsampledWidth; y < endIndex / downsampledWidth; y++) {
-        for (int x = 0; x < downsampledWidth; x++) {
-            int redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0;
-
+            //Calculating the average of the 4 pixels in the original image
             for (int dy = 0; dy < 2; dy++) {
                 for (int dx = 0; dx < 2; dx++) {
-                    int pixelIndex = ((y * 2 + dy) * width + (x * 2 + dx)) * CHANNEL_NUM;
-                    redSum += rgbImage[pixelIndex];
-                    greenSum += rgbImage[pixelIndex + 1];
-                    blueSum += rgbImage[pixelIndex + 2];
-                    alphaSum += rgbImage[pixelIndex + 3];
+                    int pixel_index = ((y * 2 + dy) * width + (x * 2 + dx)) * CHANNEL_NUM;
+
+                    r += rgb_image[pixel_index];
+                    g += rgb_image[pixel_index + 1];
+                    b += rgb_image[pixel_index + 2];
+                    a += rgb_image[pixel_index + 3];
                 }
             }
-
-            int downsampledPixelIndex = (y * downsampledWidth + x) * CHANNEL_NUM;
-            downsampledImage[downsampledPixelIndex] = redSum / 4;
-            downsampledImage[downsampledPixelIndex + 1] = greenSum / 4;
-            downsampledImage[downsampledPixelIndex + 2] = blueSum / 4;
-            downsampledImage[downsampledPixelIndex + 3] = alphaSum / 4;
+            //Calculating the index of the pixel in the downsampled image
+            int downsampled_pixel_index = (y * downsampled_width + x) * CHANNEL_NUM;
+            //Calculating the average of the 4 pixels in the original image
+            downsampled_image[downsampled_pixel_index] = r / 4;
+            downsampled_image[downsampled_pixel_index + 1] = g / 4;
+            downsampled_image[downsampled_pixel_index + 2] = b / 4;
+            downsampled_image[downsampled_pixel_index + 3] = a / 4;
         }
     }
 
-    int* recvCounts = (int*)malloc(size * sizeof(int));
-    int* displacements = (int*)malloc(size * sizeof(int));
-
+    //Gathering the downsampled image from all processes
+    //We are creating recvcounts and displs arrays for MPI_Allgatherv so that we can get a different number of pixels from each process
+    //recvcounts[i] is the number of pixels that process i will send
+    int* recvcounts = (int*) malloc(size * sizeof(int));
+    //displs[i] is the index of the first pixel that process i will send
+    int* displs = (int*) malloc(size * sizeof(int));
+    //We are calculating the number of pixels that each process will send and the index of the first pixel that each process will send
     for (int i = 0; i < size; i++) {
-        int startIdx = i * pixelsPerProcess;
-        int endIdx = startIdx + pixelsPerProcess;
-        if (endIdx > downsampledWidth * downsampledHeight) {
-            endIdx = downsampledWidth * downsampledHeight;
+        int start_i = i * pixels_per_process;
+        int end_i = start_i + pixels_per_process;
+        if (end_i > downsampled_width * downsampled_height) {
+            end_i = downsampled_width * downsampled_height;
         }
-        recvCounts[i] = (endIdx - startIdx) * CHANNEL_NUM;
-        displacements[i] = startIdx * CHANNEL_NUM;
+        recvcounts[i] = (end_i - start_i) * CHANNEL_NUM;
+        displs[i] = start_i * CHANNEL_NUM;
     }
+    //We are gathering the downsampled image from all processes
+    MPI_Allgatherv(MPI_IN_PLACE, pixels_per_process * CHANNEL_NUM, MPI_UNSIGNED_CHAR,
+                   downsampled_image, recvcounts, displs, MPI_UNSIGNED_CHAR,
+                   MPI_COMM_WORLD);
 
-    MPI_Allgatherv(MPI_IN_PLACE, pixelsPerProcess * CHANNEL_NUM, MPI_UNSIGNED_CHAR,
-        downsampledImage, recvCounts, displacements, MPI_UNSIGNED_CHAR, MPI_COMM_WORLD);
-
-    free(recvCounts);
-    free(displacements);
-    free(cpuFrequencies);
-}
-
-long getCurrentCoreFrequency()
-{
-    FILE* cpuInfo = fopen("/proc/cpuinfo", "rb");
-    if (cpuInfo == NULL) {
-        perror("Failed to open /proc/cpuinfo");
-        return -1;
-    }
-
-    long frequency = -1;
-    char line[256];
-    while (fgets(line, sizeof(line), cpuInfo)) {
-        if (sscanf(line, "cpu MHz : %ld", &frequency) == 1) {
-            break;
-        }
-    }
-
-    fclose(cpuInfo);
-
-    return frequency;
+    free(recvcounts);
+    free(displs);
 }

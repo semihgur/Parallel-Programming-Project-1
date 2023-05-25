@@ -1,5 +1,5 @@
 ARGS=-lmpi_cxx -lm -lstdc++ -lhwloc -fopenmp
-_RARGS=aybu.jpg out.jpg
+_RARGS=papagan.JPG out.jpg
 PHOTODIR=./photos
 RARGS=$(patsubst %,$(PHOTODIR)/%,$(_RARGS))
 _HEADERS=stb_image.h stb_image_write.h
