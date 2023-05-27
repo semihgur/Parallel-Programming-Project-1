@@ -1,11 +1,15 @@
 ARGS=-lmpi_cxx -lm -lstdc++ -lhwloc -fopenmp
+CC = mpicc
+
 _RARGS=papagan.JPG out.jpg
 PHOTODIR=./photos
 RARGS=$(patsubst %,$(PHOTODIR)/%,$(_RARGS))
+
 _HEADERS=stb_image.h stb_image_write.h
 INCLUDEDIR=./include
 HEADERS=$(patsubst %,$(INCLUDEDIR)/%,$(_HEADERS))
 INCLUDE=-I./include
+
 ODIR=./bin
 SRC=./src
 
@@ -14,9 +18,7 @@ SRC=./src
 all: $(patsubst $(SRC)/%.cpp, $(ODIR)/%, $(wildcard $(SRC)/*.cpp))
 
 $(ODIR)/%: $(SRC)/%.cpp $(HEADERS)
-	mpicc $< -o $@ $(INCLUDE) $(ARGS)
-	gcc $(SRC)/openmp_main.cpp -o $(ODIR)/openmp_main $(INCLUDE) $(ARGS)
-	mpicc $(SRC)/seq_main.cpp -o $(ODIR)/seq_main $(INCLUDE) $(ARGS)
+	$(CC) $< -o $@ $(CFLAGS) $(INCLUDE) $(ARGS)
 .PHONY: run
 
 define run_target
