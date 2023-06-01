@@ -38,7 +38,10 @@ else ifeq ($(1),7)
 else ifeq ($(1),15)
     ANOTHER_VALUE = 1
 endif
-
+runCuda: $(ODIR)/cuda_main
+	nvcc $(SRC)/cuda_main.cu -o $(ODIR)/cuda_main $(INCLUDE) $(ARGS)
+	./$(ODIR)/cuda_main $(RARGS) $(1)
+.PHONY: runCuda
 runOpenmp$(1): $(ODIR)/openmp_main
 	$(ODIR)/openmp_main $(RARGS) $(1) 
 .PHONY: runOpenmp$(1)
