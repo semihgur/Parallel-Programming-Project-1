@@ -1,5 +1,6 @@
-ARGS=-lmpi_cxx -lm -lstdc++ -lhwloc -fopenmp
-CC = mpicc
+ARGS=-lmpi_cxx -lm -lstdc++ -lhwloc
+CC=mpicc
+NVCC=nvcc
 
 _RARGS=papagan.JPG out.jpg
 PHOTODIR=./photos
@@ -15,16 +16,20 @@ SRC=./src
 
 
 .PHONY: all
-all: $(patsubst $(SRC)/%.cpp, $(ODIR)/%, $(wildcard $(SRC)/*.cpp))
+all: $(patsubst $(SRC)/%.cpp, $(ODIR)/%, $(wildcard $(SRC)/*.cpp)) $(ODIR)/downscale
 
 $(ODIR)/%: $(SRC)/%.cpp $(HEADERS)
 	$(CC) $< -o $@ $(CFLAGS) $(INCLUDE) $(ARGS)
+
+$(ODIR)/downscale: $(SRC)/cuda.cu
+	$(NVCC) $< -o $@ $(INCLUDE) $(ARGS)
+
 .PHONY: run
 
 define run_target
-
 runSequential$(1): $(ODIR)/seq_main
 	mpirun -np $(1) $(ODIR)/seq_main $(RARGS)
+
 .PHONY: runSequential$(1)
 
 ifeq ($(1),0)
@@ -38,23 +43,26 @@ else ifeq ($(1),7)
 else ifeq ($(1),15)
     ANOTHER_VALUE = 1
 endif
-runCuda: $(ODIR)/cuda_main
-	nvcc $(SRC)/cuda_main.cu -o $(ODIR)/cuda_main $(INCLUDE) $(ARGS)
-	./$(ODIR)/cuda_main $(RARGS) $(1)
-.PHONY: runCuda
+
 runOpenmp$(1): $(ODIR)/openmp_main
 	$(ODIR)/openmp_main $(RARGS) $(1) 
+
 .PHONY: runOpenmp$(1)
 
 runHybrid$(1): $(ODIR)/hybrid_main
 	mpirun -np $(1) $(ODIR)/hybrid_main $(RARGS) $(ANOTHER_VALUE)
+
 .PHONY: runHybrid$(1)
+
 endef
 
 $(foreach proc,0 1 2 3 4 6 8 10 12 14 16,$(eval $(call run_target,$(proc))))
 
-.PHONY: clean
+.PHONY: runCuda
+runCuda:
+	./$(ODIR)/downscale $(RARGS)
 
+.PHONY: clean
 clean:
-	rm -f bin/* photos/out.jpg
+	rm -f $(ODIR)/* photos/out.jpg
 	clear

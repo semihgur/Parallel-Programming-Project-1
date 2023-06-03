@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -13,15 +15,22 @@
 
 #define CHANNEL_NUM 4
 
+
+/*
+    Donnscaling function, simply sum the color of each 4 pixel and make it one pixel. 
+*/
 __global__ void downscaleImage(const uint8_t *inputImage, int width, int height, uint8_t *downsampledImage)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
+    // To downscale it to half size 
     if (x < width / 2 && y < height / 2)
     {
+        // Color defined in pixel as number up to 256
         int redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0;
 
+        // Geting 4 pixel 
         for (int dy = 0; dy < 2; dy++)
         {
             for (int dx = 0; dx < 2; dx++)
@@ -34,6 +43,7 @@ __global__ void downscaleImage(const uint8_t *inputImage, int width, int height,
             }
         }
 
+        // We will sum it to one pixel 
         int downsampledPixelIndex = (y * width / 2 + x) * CHANNEL_NUM;
         downsampledImage[downsampledPixelIndex] = redSum / 4;
         downsampledImage[downsampledPixelIndex + 1] = greenSum / 4;
@@ -72,11 +82,17 @@ void performCUDAImageDownscaling(const uint8_t *inputImage, int width, int heigh
 
 int main(int argc, char *argv[])
 {
+    clock_t start_time, end_time;
+    double execution_time;
+
     int originalWidth, originalHeight, bpp;
     uint8_t *inputImage = stbi_load(argv[1], &originalWidth, &originalHeight, &bpp, CHANNEL_NUM);
 
     printf("Original Width: %d  Height: %d \n", originalWidth, originalHeight);
     printf("Input: %s , Output: %s  \n", argv[1], argv[2]);
+
+    // Start measuring time
+    start_time = clock(); 
 
     int downsampledWidth = originalWidth / 2;
     int downsampledHeight = originalHeight / 2;
@@ -89,5 +105,11 @@ int main(int argc, char *argv[])
     stbi_image_free(inputImage);
     free(downsampledImage);
 
+    // Stop measuring time
+    end_time = clock(); 
+
+    execution_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC * 1000;
+
+    printf("Execution time: %.2f milliseconds\n", execution_time);
     return 0;
 }
