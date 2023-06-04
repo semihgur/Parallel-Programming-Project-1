@@ -1,4 +1,3 @@
-
 /*
  *
  * CENG342 Project-3
@@ -8,7 +7,7 @@
  * Usage:  main <input.jpg> <output.jpg> 
  *
  * @group_id 8
- * @author Emre Özçatal 20050111074, Semih Gür 19050111017, Emirhan Akıtürk 19050111065, Abdülsamet Haymana 19050111068
+ * @author Emirhan Akıtürk 19050111065, Emre Özçatal 20050111074, Semih Gür 19050111017, Abdülsamet Haymana 19050111068
  *
  */
 
