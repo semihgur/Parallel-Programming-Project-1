@@ -1,35 +1,11 @@
-# Parallel Programming Project 1
+PARALLEL PROJECT 3
 
+Emre Özçatal 20050111074, Semih Gür 19050111017, Emirhan Akıtürk 19050111065, Abdülsamet Haymana 19050111068
 
-For compile all code:
+To use this Makefile:
 
-```bash
-
-    make all
-
-```
-
-This will compile all .c file to ./bin folder.
-
-You can run seq_main or mpi_main that is paralel of seq_main with :
-```bash
-
-    make runSequential1
-    make runParallel2
-
-
-```
-
-You can change process count when calling definition of function.
-
-For example:
-
-This will run mpi_man with 4 process.
-
-```bash
-
-
-    make runParallel4
-
-
-```
+make all will compile all 3 programs
+make openmp will compile just the openmp program
+make run_openmp will run the openmp program
+make clean will delete all compiled programs
+Similar targets exist for cuda and seq

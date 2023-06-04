@@ -1,4 +1,17 @@
-#include <cuda_runtime.h>
+/*
+ *
+ * CENG342 Project-3
+ *
+ * Downscaling SEQUENTIAL
+ *
+ * Usage:  main <input.jpg> <output.jpg> 
+ *
+ * @group_id 8
+ * @author Emre Özçatal 20050111074, Semih Gür 19050111017, Emirhan Akıtürk 19050111065, Abdülsamet Haymana 19050111068
+ *
+ */
+ 
+ #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <math.h>
 #include <stdio.h>
